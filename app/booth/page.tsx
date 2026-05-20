@@ -23,7 +23,6 @@ export default function BoothPage() {
     clearPhotos,
     captureStatus,
     setCaptureStatus,
-    countdown,
     setCountdown,
     selectedFilter,
     selectedTemplate,
@@ -34,7 +33,6 @@ export default function BoothPage() {
   const isCapturing =
     captureStatus === "countdown" || captureStatus === "capturing";
 
-  // Flash effect saat capture
   const triggerFlash = useCallback(() => {
     setIsFlashing(true);
     setTimeout(() => setIsFlashing(false), 200);
@@ -55,14 +53,11 @@ export default function BoothPage() {
         onFlash: triggerFlash,
       });
 
-      // Semua foto selesai → build session → ke result page
       setCaptureStatus("processing");
       const session = buildSession();
       setFinalSession(session);
 
-      setTimeout(() => {
-        router.push("/result");
-      }, 600);
+      setTimeout(() => router.push("/result"), 600);
     } catch (err) {
       console.error("Capture failed:", err);
       setCaptureStatus("idle");
@@ -83,7 +78,7 @@ export default function BoothPage() {
         </span>
       </div>
 
-      {/* Camera + Overlay */}
+      {/* Camera */}
       <div className="relative w-full max-w-sm">
         <Camera
           videoRef={videoRef}
@@ -91,18 +86,15 @@ export default function BoothPage() {
           onReady={() => setIsCameraReady(true)}
         />
 
-        {/* Countdown overlay */}
         <CountdownDisplay
-          count={countdown}
+          count={useBoothStore((s) => s.countdown)}
           isActive={captureStatus === "countdown"}
         />
 
-        {/* Flash overlay */}
         {isFlashing && (
           <div className="absolute inset-0 bg-white rounded-2xl z-20 pointer-events-none" />
         )}
 
-        {/* Processing overlay */}
         {captureStatus === "processing" && (
           <div className="absolute inset-0 bg-black/60 rounded-2xl z-20 flex items-center justify-center">
             <div className="flex flex-col items-center gap-3">
@@ -113,7 +105,7 @@ export default function BoothPage() {
         )}
       </div>
 
-      {/* Photo strip preview */}
+      {/* Photo strip */}
       <div className="w-full max-w-sm">
         <PhotoStrip photos={photos} />
       </div>
@@ -129,7 +121,7 @@ export default function BoothPage() {
         </span>
       </div>
 
-      {/* CTA Button */}
+      {/* CTA */}
       <button
         onClick={handleStartCapture}
         disabled={!isCameraReady || isCapturing}

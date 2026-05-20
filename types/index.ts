@@ -3,52 +3,45 @@
 // ============================================
 export type FilterType = "none" | "grayscale" | "sepia" | "vintage";
 
-// ============================================
-// STICKER
-// ============================================
 export interface Sticker {
   id: string;
   emoji: string;
   label: string;
 }
 
-// ============================================
-// TEMPLATE / FRAME
-// ============================================
+export interface PlacedSticker {
+  instanceId: string;
+  stickerId: string;
+  emoji: string;
+  x: number; // persen 0–100 relatif terhadap preview container
+  y: number;
+}
+
 export interface Template {
   id: string;
   name: string;
   description: string;
-  bgColor: string; // warna background strip
-  accentColor: string; // warna border/frame
-  textColor: string; // warna teks label
+  bgColor: string;
+  accentColor: string;
+  textColor: string;
 }
 
-// ============================================
-// PHOTO
-// ============================================
 export interface Photo {
   id: string;
-  dataUrl: string; // base64 hasil canvas capture
+  dataUrl: string;
   filter: FilterType;
   takenAt: Date;
 }
 
-// ============================================
-// SESSION (ini yang nanti dikirim ke API)
-// ============================================
 export interface PhotoSession {
   id: string;
-  images: string[]; // array of dataUrl
-  template: string; // template id
+  images: string[];
+  template: string;
   filter: FilterType;
-  stickers: Sticker[];
+  placedStickers: PlacedSticker[];
   createdAt: Date;
 }
 
-// ============================================
-// CAPTURE STATE (progress saat ambil foto)
-// ============================================
 export type CaptureStatus =
   | "idle"
   | "countdown"

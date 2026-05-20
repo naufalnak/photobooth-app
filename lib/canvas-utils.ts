@@ -1,32 +1,23 @@
 import { applyFilter } from "@/lib/filters";
-import type { PhotoSession, Template } from "@/types";
+import type { PhotoSession, Template, PlacedSticker } from "@/types";
 
-// ============================================
-// LAYOUT CONSTANTS
-// ============================================
 const STRIP_WIDTH = 400;
 const PHOTO_WIDTH = 360;
-const PHOTO_HEIGHT = 270; // rasio 4:3
+const PHOTO_HEIGHT = 270;
 const PHOTO_GAP = 12;
 const PADDING_X = 20;
 const PADDING_TOP = 28;
 const PADDING_BOTTOM = 48;
-const HEADER_HEIGHT = 0; // bisa diisi nanti
 
-// Total tinggi strip
 function getStripHeight(photoCount: number): number {
   return (
     PADDING_TOP +
-    HEADER_HEIGHT +
     photoCount * PHOTO_HEIGHT +
     (photoCount - 1) * PHOTO_GAP +
     PADDING_BOTTOM
   );
 }
 
-// ============================================
-// LOAD IMAGE DARI dataUrl → HTMLImageElement
-// ============================================
 function loadImage(dataUrl: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -36,9 +27,6 @@ function loadImage(dataUrl: string): Promise<HTMLImageElement> {
   });
 }
 
-// ============================================
-// DRAW SATU FOTO KE CANVAS
-// ============================================
 async function drawPhoto(
   ctx: CanvasRenderingContext2D,
   dataUrl: string,
@@ -57,8 +45,6 @@ async function drawPhoto(
   ctx.drawImage(img, x, y, width, height);
   ctx.restore();
 
-  // Apply filter di area foto — pakai offscreen canvas
-  // supaya koordinat selalu mulai dari 0,0
   if (filter !== "none") {
     const offscreen = document.createElement("canvas");
     offscreen.width = width;
@@ -76,30 +62,46 @@ async function drawPhoto(
   }
 }
 
-// ============================================
-// DRAW LABEL BAWAH STRIP
-// ============================================
+// Posisi sticker dalam persen → koordinat canvas absolut
+function drawPlacedStickers(
+  ctx: CanvasRenderingContext2D,
+  stickers: PlacedSticker[],
+  canvasWidth: number,
+  canvasHeight: number,
+): void {
+  if (stickers.length === 0) return;
+
+  ctx.font = "32px serif";
+  ctx.textBaseline = "middle";
+  ctx.textAlign = "center";
+  ctx.shadowColor = "rgba(0,0,0,0.4)";
+  ctx.shadowBlur = 4;
+
+  for (const sticker of stickers) {
+    const x = (sticker.x / 100) * canvasWidth;
+    const y = (sticker.y / 100) * canvasHeight;
+    ctx.fillText(sticker.emoji, x, y);
+  }
+
+  ctx.shadowBlur = 0;
+}
+
 function drawLabel(
   ctx: CanvasRenderingContext2D,
   template: Template,
   stripHeight: number,
 ): void {
-  const centerX = STRIP_WIDTH / 2;
-  const y = stripHeight - PADDING_BOTTOM / 2 - 4;
-
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-
-  // Titik dekorasi kiri kanan
   ctx.fillStyle = template.accentColor + "88";
   ctx.font = "11px monospace";
-  ctx.fillText("✦  photobooth  ✦", centerX, y);
+  ctx.fillText(
+    "✦  photobooth  ✦",
+    STRIP_WIDTH / 2,
+    stripHeight - PADDING_BOTTOM / 2 - 4,
+  );
 }
 
-// ============================================
-// GENERATE IMAGE — fungsi utama
-// Ini yang nanti bisa dikirim ke API
-// ============================================
 export async function generateImage(
   session: PhotoSession,
   template: Template,
@@ -114,20 +116,16 @@ export async function generateImage(
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas context not available");
 
-  // 1. Background strip
   ctx.fillStyle = template.bgColor;
   ctx.fillRect(0, 0, STRIP_WIDTH, stripHeight);
 
-  // 2. Border/frame tipis
   ctx.strokeStyle = template.accentColor + "33";
   ctx.lineWidth = 1;
   ctx.strokeRect(8, 8, STRIP_WIDTH - 16, stripHeight - 16);
 
-  // 3. Gambar tiap foto
   for (let i = 0; i < photoCount; i++) {
     const x = PADDING_X;
     const y = PADDING_TOP + i * (PHOTO_HEIGHT + PHOTO_GAP);
-
     await drawPhoto(
       ctx,
       session.images[i],
@@ -139,15 +137,12 @@ export async function generateImage(
     );
   }
 
-  // 4. Label bawah
+  drawPlacedStickers(ctx, session.placedStickers, STRIP_WIDTH, stripHeight);
   drawLabel(ctx, template, stripHeight);
 
   return canvas.toDataURL("image/png");
 }
 
-// ============================================
-// DOWNLOAD HELPER
-// ============================================
 export function downloadImage(dataUrl: string, filename = "photobooth.png") {
   const link = document.createElement("a");
   link.href = dataUrl;

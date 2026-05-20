@@ -3,14 +3,11 @@ import {
   type Photo,
   type Template,
   type FilterType,
-  type Sticker,
   type PhotoSession,
   type CaptureStatus,
+  type PlacedSticker,
 } from "@/types";
 
-// ============================================
-// TEMPLATE DATA (3 template bawaan)
-// ============================================
 export const TEMPLATES: Template[] = [
   {
     id: "classic",
@@ -38,10 +35,7 @@ export const TEMPLATES: Template[] = [
   },
 ];
 
-// ============================================
-// STICKER DATA
-// ============================================
-export const STICKERS: Sticker[] = [
+export const STICKERS = [
   { id: "heart", emoji: "❤️", label: "Heart" },
   { id: "star", emoji: "⭐", label: "Star" },
   { id: "fire", emoji: "🔥", label: "Fire" },
@@ -50,92 +44,83 @@ export const STICKERS: Sticker[] = [
   { id: "camera", emoji: "📷", label: "Camera" },
 ];
 
-// ============================================
-// STORE INTERFACE
-// ============================================
 interface BoothState {
-  // Data
   photos: Photo[];
   selectedTemplate: Template;
   selectedFilter: FilterType;
-  activeStickers: Sticker[];
+  placedStickers: PlacedSticker[];
   captureStatus: CaptureStatus;
   countdown: number;
   finalSession: PhotoSession | null;
 
-  // Actions — Template
   setTemplate: (template: Template) => void;
-
-  // Actions — Filter
   setFilter: (filter: FilterType) => void;
 
-  // Actions — Sticker
-  toggleSticker: (sticker: Sticker) => void;
+  addPlacedSticker: (sticker: PlacedSticker) => void;
+  movePlacedSticker: (instanceId: string, x: number, y: number) => void;
+  removePlacedSticker: (instanceId: string) => void;
+  clearPlacedStickers: () => void;
 
-  // Actions — Photos
   addPhoto: (photo: Photo) => void;
   clearPhotos: () => void;
-
-  // Actions — Capture flow
   setCaptureStatus: (status: CaptureStatus) => void;
   setCountdown: (n: number) => void;
 
-  // Actions — Session
   buildSession: () => PhotoSession;
   setFinalSession: (session: PhotoSession) => void;
   resetAll: () => void;
 }
 
-// ============================================
-// DEFAULT STATE
-// ============================================
 const defaultState = {
   photos: [],
   selectedTemplate: TEMPLATES[0],
   selectedFilter: "none" as FilterType,
-  activeStickers: [],
+  placedStickers: [],
   captureStatus: "idle" as CaptureStatus,
   countdown: 3,
   finalSession: null,
 };
 
-// ============================================
-// STORE
-// ============================================
 export const useBoothStore = create<BoothState>((set, get) => ({
   ...defaultState,
 
   setTemplate: (template) => set({ selectedTemplate: template }),
-
   setFilter: (filter) => set({ selectedFilter: filter }),
 
-  toggleSticker: (sticker) =>
-    set((state) => {
-      const exists = state.activeStickers.find((s) => s.id === sticker.id);
-      return {
-        activeStickers: exists
-          ? state.activeStickers.filter((s) => s.id !== sticker.id)
-          : [...state.activeStickers, sticker],
-      };
-    }),
+  addPlacedSticker: (sticker) =>
+    set((state) => ({ placedStickers: [...state.placedStickers, sticker] })),
+
+  movePlacedSticker: (instanceId, x, y) =>
+    set((state) => ({
+      placedStickers: state.placedStickers.map((s) =>
+        s.instanceId === instanceId ? { ...s, x, y } : s,
+      ),
+    })),
+
+  removePlacedSticker: (instanceId) =>
+    set((state) => ({
+      placedStickers: state.placedStickers.filter(
+        (s) => s.instanceId !== instanceId,
+      ),
+    })),
+
+  clearPlacedStickers: () => set({ placedStickers: [] }),
 
   addPhoto: (photo) => set((state) => ({ photos: [...state.photos, photo] })),
 
   clearPhotos: () => set({ photos: [] }),
 
   setCaptureStatus: (status) => set({ captureStatus: status }),
-
   setCountdown: (n) => set({ countdown: n }),
 
-  // Fungsi ini nanti yang dikirim ke API
   buildSession: (): PhotoSession => {
-    const { photos, selectedTemplate, selectedFilter, activeStickers } = get();
+    const { photos, selectedTemplate, selectedFilter, placedStickers } = get();
     return {
       id: crypto.randomUUID(),
       images: photos.map((p) => p.dataUrl),
       template: selectedTemplate.id,
       filter: selectedFilter,
-      stickers: activeStickers,
+      placedStickers,
       createdAt: new Date(),
     };
   },
