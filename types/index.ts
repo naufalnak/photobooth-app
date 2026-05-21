@@ -1,5 +1,15 @@
 // types/index.ts
-export type FilterType = "none" | "grayscale" | "sepia" | "vintage";
+export type FilterType =
+  | "none"
+  | "grayscale"
+  | "sepia"
+  | "vintage"
+  | "summer"
+  | "softglam"
+  | "retroflash"
+  | "midnight"
+  | "filmgrain"
+  | "saturated";
 
 export interface Sticker {
   id: string;

@@ -254,16 +254,22 @@ function FilterTab() {
     useBoothStore();
 
   const filters = [
-    { id: "none", label: "Normal", desc: "Tanpa filter" },
-    { id: "grayscale", label: "B&W", desc: "Hitam putih" },
-    { id: "sepia", label: "Sepia", desc: "Tone coklat hangat" },
-    { id: "vintage", label: "Vintage", desc: "Film jadul" },
+    { id: "none", label: "Normal", desc: "No filter" },
+    { id: "softglam", label: "Soft Glam", desc: "Bright & dreamy" },
+    { id: "summer", label: "Summer Tan", desc: "Golden warm glow" },
+    { id: "retroflash", label: "Retro Flash", desc: "Overexposed Y2K" },
+    { id: "saturated", label: "Saturated", desc: "Vivid & punchy" },
+    { id: "midnight", label: "Midnight", desc: "Dark & moody" },
+    { id: "filmgrain", label: "Film Grain", desc: "Analog faded" },
+    { id: "grayscale", label: "B&W", desc: "Classic mono" },
+    { id: "sepia", label: "Sepia", desc: "Warm brown tone" },
+    { id: "vintage", label: "Vintage", desc: "Old film" },
   ] as const;
 
   if (!finalSession) return null;
 
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-2 gap-3 max-h-[480px] overflow-y-auto pr-1">
       {filters.map((f) => (
         <button
           key={f.id}
