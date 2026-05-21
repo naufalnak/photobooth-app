@@ -1,4 +1,3 @@
-// app/result/page.tsx
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
@@ -11,6 +10,39 @@ import StripEditor from "@/components/StripEditor";
 
 type ResultStep = "editing" | "generating" | "done";
 
+const baseMain: React.CSSProperties = {
+  background: "#f5f2ee",
+  fontFamily: "var(--font-dm-sans)",
+};
+
+const btnPrimary: React.CSSProperties = {
+  width: "100%",
+  padding: "16px",
+  background: "#1a1a1a",
+  color: "#f5f2ee",
+  fontSize: 15,
+  fontWeight: 600,
+  border: "none",
+  borderRadius: 14,
+  cursor: "pointer",
+  fontFamily: "var(--font-dm-sans)",
+  transition: "transform 0.15s",
+};
+
+const btnSecondary: React.CSSProperties = {
+  width: "100%",
+  padding: "14px",
+  background: "#fff",
+  color: "#1a1a1a",
+  fontSize: 13,
+  fontWeight: 500,
+  border: "1px solid #e8e4de",
+  borderRadius: 14,
+  cursor: "pointer",
+  fontFamily: "var(--font-dm-sans)",
+  transition: "transform 0.15s",
+};
+
 export default function ResultPage() {
   const router = useRouter();
 
@@ -20,7 +52,6 @@ export default function ResultPage() {
     placedStickers,
     customBackground,
     bgColor,
-    selectedTemplate,
     setFinalSession,
     resetAll,
   } = useBoothStore();
@@ -80,30 +111,66 @@ export default function ResultPage() {
   // ---- EDITING ----
   if (step === "editing") {
     return (
-      <main className="min-h-screen flex flex-col items-center px-4 py-8 gap-5">
+      <main
+        className="min-h-screen flex flex-col items-center px-4 py-8 gap-5"
+        style={baseMain}>
+        {/* Header */}
         <div className="w-full max-w-sm flex items-center justify-between">
           <button
             onClick={handleRetake}
-            className="text-neutral-500 hover:text-white text-sm transition-colors">
-            ← Retake
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontSize: 13,
+              color: "#888",
+              fontFamily: "var(--font-dm-sans)",
+            }}>
+            ← retake
           </button>
-          <span className="text-white text-sm font-medium">Edit strip</span>
-          <div className="w-16" />
+          <span
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: "#1a1a1a",
+              fontFamily: "var(--font-dm-sans)",
+            }}>
+            edit strip
+          </span>
+          <div style={{ width: 56 }} />
         </div>
 
+        {/* Editor */}
         <div className="w-full max-w-sm">
           <StripEditor />
         </div>
 
-        <div className="w-full max-w-sm flex flex-col gap-3 pt-2">
+        {/* Actions */}
+        <div className="w-full max-w-sm flex flex-col gap-2 pt-1">
           <button
             onClick={handleGenerate}
-            className="w-full py-4 rounded-2xl font-semibold text-base transition-all duration-200 active:scale-95 bg-white text-black hover:bg-neutral-100">
+            style={btnPrimary}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.transform = "scale(1.01)")
+            }
+            onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+            onMouseDown={(e) =>
+              (e.currentTarget.style.transform = "scale(0.98)")
+            }
+            onMouseUp={(e) =>
+              (e.currentTarget.style.transform = "scale(1.01)")
+            }>
             Generate Strip →
           </button>
           <button
             onClick={handleRetake}
-            className="w-full py-3 rounded-2xl border border-neutral-800 text-neutral-400 text-sm transition-all hover:border-neutral-600 active:scale-95">
+            style={btnSecondary}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.transform = "scale(1.01)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.transform = "scale(1)")
+            }>
             Retake Photos
           </button>
         </div>
@@ -114,23 +181,71 @@ export default function ResultPage() {
   // ---- GENERATING ----
   if (step === "generating") {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <div className="w-10 h-10 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-        <p className="text-neutral-400 text-sm">Developing your strip...</p>
+      <main
+        className="min-h-screen flex flex-col items-center justify-center gap-4"
+        style={baseMain}>
+        {/* Spinner warna gelap */}
+        <div
+          style={{
+            width: 36,
+            height: 36,
+            border: "2px solid #1a1a1a22",
+            borderTopColor: "#1a1a1a",
+            borderRadius: "50%",
+            animation: "spin 0.8s linear infinite",
+          }}
+        />
+        <p
+          style={{
+            fontSize: 13,
+            color: "#888",
+            fontFamily: "var(--font-dm-mono)",
+          }}>
+          developing your strip...
+        </p>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </main>
     );
   }
 
   // ---- DONE ----
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center px-4 py-12 gap-6">
-      <div className="text-center space-y-1">
-        <h1 className="text-xl font-semibold">Strip siap! 🎉</h1>
-        <p className="text-neutral-400 text-sm">Simpan atau edit lagi</p>
+    <main
+      className="min-h-screen flex flex-col items-center justify-center px-4 py-12 gap-6"
+      style={baseMain}>
+      {/* Header */}
+      <div className="text-center" style={{ marginBottom: 4 }}>
+        <h1
+          style={{
+            fontSize: 28,
+            fontWeight: 700,
+            letterSpacing: "-1px",
+            color: "#1a1a1a",
+            fontFamily: "var(--font-dm-sans)",
+            marginBottom: 4,
+          }}>
+          looking good 🎉
+        </h1>
+        <p
+          style={{
+            fontSize: 13,
+            color: "#888",
+            fontFamily: "var(--font-dm-sans)",
+          }}>
+          save or edit again
+        </p>
       </div>
 
+      {/* Preview strip */}
       {resultDataUrl && (
-        <div className="relative w-full max-w-[220px] shadow-2xl shadow-black/60 rounded-xl overflow-hidden">
+        <div
+          style={{
+            width: "100%",
+            maxWidth: 220,
+            borderRadius: 16,
+            overflow: "hidden",
+            boxShadow: "0 20px 60px #1a1a1a22",
+          }}>
           <Image
             src={resultDataUrl}
             alt="Photo strip result"
@@ -142,28 +257,65 @@ export default function ResultPage() {
         </div>
       )}
 
-      {error && <p className="text-red-400 text-sm">{error}</p>}
+      {error && (
+        <p
+          style={{
+            fontSize: 13,
+            color: "#e24b4a",
+            fontFamily: "var(--font-dm-mono)",
+          }}>
+          {error}
+        </p>
+      )}
 
-      <div className="w-full max-w-sm flex flex-col gap-3">
+      {/* Actions */}
+      <div className="w-full max-w-sm flex flex-col gap-2">
         <button
           onClick={handleDownload}
-          className="w-full py-4 rounded-2xl bg-white text-black font-semibold text-base transition-all active:scale-95">
+          style={btnPrimary}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.transform = "scale(1.01)")
+          }
+          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+          onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.98)")}
+          onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1.01)")}>
           Download PNG
         </button>
+
         <button
           onClick={() => setStep("editing")}
-          className="w-full py-3 rounded-2xl border border-neutral-800 text-neutral-400 text-sm transition-all hover:border-neutral-600 active:scale-95">
+          style={btnSecondary}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.transform = "scale(1.01)")
+          }
+          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}>
           ← Edit lagi
         </button>
+
         <button
           onClick={handleRetake}
-          className="w-full py-3 rounded-2xl border border-neutral-800 text-neutral-400 text-sm transition-all hover:border-neutral-600 active:scale-95">
+          style={btnSecondary}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.transform = "scale(1.01)")
+          }
+          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}>
           Retake Photos
         </button>
+
         <Link
           href="/"
-          className="text-center text-neutral-600 hover:text-white text-sm transition-colors py-2">
-          ← Kembali ke home
+          style={{
+            textAlign: "center",
+            fontSize: 12,
+            color: "#bbb",
+            textDecoration: "none",
+            padding: "8px 0",
+            fontFamily: "var(--font-dm-mono)",
+            transition: "color 0.15s",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = "#1a1a1a")}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "#bbb")}>
+          ← kembali ke home
         </Link>
       </div>
     </main>

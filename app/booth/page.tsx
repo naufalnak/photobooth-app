@@ -45,7 +45,6 @@ export default function BoothPage() {
     setCaptureStatus("countdown");
 
     try {
-      // captureSequence mengembalikan array foto langsung
       const capturedPhotos = await captureSequence(videoEl, {
         filter: selectedFilter,
         onCountdownTick: (n) => setCountdown(n),
@@ -55,7 +54,6 @@ export default function BoothPage() {
 
       setCaptureStatus("processing");
 
-      // Bangun session dari capturedPhotos langsung — tidak bergantung store timing
       const session: PhotoSession = {
         id: crypto.randomUUID(),
         images: capturedPhotos.map((p) => p.dataUrl),
@@ -67,10 +65,7 @@ export default function BoothPage() {
       };
 
       setFinalSession(session);
-
-      // Tunggu sebentar biar setFinalSession sempat tersimpan
       await new Promise((r) => setTimeout(r, 300));
-
       router.push("/result");
     } catch (err) {
       console.error("Capture failed:", err);
@@ -78,17 +73,53 @@ export default function BoothPage() {
     }
   }, [isCapturing, selectedFilter, selectedTemplate]);
 
+  const photoCount = photos.length;
+
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center px-4 py-8 gap-5">
+    <main
+      className="min-h-screen flex flex-col items-center justify-center px-4 py-8 gap-5"
+      style={{ background: "#f5f2ee", fontFamily: "var(--font-dm-sans)" }}>
       {/* Header */}
       <div className="w-full max-w-sm flex items-center justify-between">
         <Link
           href="/"
-          className="text-neutral-500 hover:text-white text-sm transition-colors">
-          ← Back
+          style={{
+            fontSize: 13,
+            color: "#888",
+            textDecoration: "none",
+            fontFamily: "var(--font-dm-sans)",
+            transition: "color 0.15s",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = "#1a1a1a")}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "#888")}>
+          ← back
         </Link>
-        <span className="text-neutral-400 text-sm">
-          {photos.length} / 4 photos
+
+        {/* Progress dots */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          {[0, 1, 2, 3].map((i) => (
+            <div
+              key={i}
+              style={{
+                width: i < photoCount ? 20 : 8,
+                height: 8,
+                borderRadius: 100,
+                background: i < photoCount ? "#1a1a1a" : "#1a1a1a22",
+                transition: "all 0.3s ease",
+              }}
+            />
+          ))}
+        </div>
+
+        <span
+          style={{
+            fontSize: 12,
+            color: "#888",
+            fontFamily: "var(--font-dm-mono)",
+            minWidth: 48,
+            textAlign: "right",
+          }}>
+          {photoCount}/4
         </span>
       </div>
 
@@ -105,16 +136,38 @@ export default function BoothPage() {
           isActive={captureStatus === "countdown"}
         />
 
+        {/* Flash */}
         {isFlashing && (
-          <div className="absolute inset-0 bg-white rounded-2xl z-20 pointer-events-none" />
+          <div
+            className="absolute inset-0 rounded-2xl z-20 pointer-events-none"
+            style={{ background: "#fff" }}
+          />
         )}
 
+        {/* Processing overlay */}
         {captureStatus === "processing" && (
-          <div className="absolute inset-0 bg-black/60 rounded-2xl z-20 flex items-center justify-center">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-              <p className="text-white text-sm">Developing film...</p>
-            </div>
+          <div
+            className="absolute inset-0 rounded-2xl z-20 flex flex-col items-center justify-center gap-3"
+            style={{ background: "rgba(245,242,238,0.85)" }}>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                border: "2px solid #1a1a1a22",
+                borderTopColor: "#1a1a1a",
+                borderRadius: "50%",
+                animation: "spin 0.8s linear infinite",
+              }}
+            />
+            <p
+              style={{
+                fontSize: 12,
+                color: "#888",
+                fontFamily: "var(--font-dm-mono)",
+              }}>
+              developing film...
+            </p>
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
           </div>
         )}
       </div>
@@ -128,10 +181,37 @@ export default function BoothPage() {
       <button
         onClick={handleStartCapture}
         disabled={!isCameraReady || isCapturing}
-        className="w-full max-w-sm py-4 rounded-2xl font-semibold text-base transition-all duration-200 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed bg-white text-black">
+        style={{
+          width: "100%",
+          maxWidth: 384,
+          padding: "16px",
+          background: !isCameraReady || isCapturing ? "#1a1a1a44" : "#1a1a1a",
+          color: "#f5f2ee",
+          fontSize: 15,
+          fontWeight: 600,
+          border: "none",
+          borderRadius: 14,
+          cursor: !isCameraReady || isCapturing ? "not-allowed" : "pointer",
+          fontFamily: "var(--font-dm-sans)",
+          transition: "all 0.15s",
+          letterSpacing: "0.2px",
+        }}
+        onMouseEnter={(e) => {
+          if (isCameraReady && !isCapturing)
+            e.currentTarget.style.transform = "scale(1.01)";
+        }}
+        onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+        onMouseDown={(e) => {
+          if (isCameraReady && !isCapturing)
+            e.currentTarget.style.transform = "scale(0.98)";
+        }}
+        onMouseUp={(e) => {
+          if (isCameraReady && !isCapturing)
+            e.currentTarget.style.transform = "scale(1.01)";
+        }}>
         {isCapturing
-          ? `Mengambil foto ${photos.length + 1} dari 4...`
-          : "Mulai Foto"}
+          ? `taking photo ${photoCount + 1} of 4...`
+          : "Mulai Foto →"}
       </button>
     </main>
   );

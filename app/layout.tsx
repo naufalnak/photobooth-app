@@ -1,12 +1,22 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { DM_Sans, DM_Mono } from "next/font/google";
 import "./globals.css";
 
-const geist = Geist({ subsets: ["latin"] });
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-dm-sans",
+  weight: ["400", "500", "700"],
+});
+
+const dmMono = DM_Mono({
+  subsets: ["latin"],
+  variable: "--font-dm-mono",
+  weight: ["400", "500"],
+});
 
 export const metadata: Metadata = {
   title: "Photobooth",
-  description: "Take fun photos with filters and frames",
+  description: "4 shots. your vibe. download in seconds.",
 };
 
 export default function RootLayout({
@@ -17,7 +27,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geist.className} bg-neutral-950 text-white antialiased`}>
+        className={`${dmSans.variable} ${dmMono.variable} antialiased`}
+        style={{ background: "#f5f2ee", color: "#1a1a1a" }}>
         {children}
       </body>
     </html>
