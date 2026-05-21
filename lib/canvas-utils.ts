@@ -1,13 +1,17 @@
+// lib/canvas-utils.ts
 import { applyFilter } from "@/lib/filters";
 import type { PhotoSession, Template, PlacedSticker } from "@/types";
 
+// ============================================
+// LAYOUT
+// ============================================
 const STRIP_WIDTH = 400;
-const PHOTO_WIDTH = 360;
-const PHOTO_HEIGHT = 270;
+const PHOTO_WIDTH = 340;
+const PHOTO_HEIGHT = 255; // rasio 4:3
 const PHOTO_GAP = 12;
-const PADDING_X = 20;
-const PADDING_TOP = 28;
-const PADDING_BOTTOM = 48;
+const PADDING_X = 30; // padding kiri-kanan foto
+const PADDING_TOP = 40; // ruang atas (untuk teks/dekorasi)
+const PADDING_BOTTOM = 56; // ruang bawah (untuk label)
 
 function getStripHeight(photoCount: number): number {
   return (
@@ -27,6 +31,37 @@ function loadImage(dataUrl: string): Promise<HTMLImageElement> {
   });
 }
 
+// ============================================
+// DRAW BACKGROUND
+// Bisa gambar custom atau warna solid
+// ============================================
+async function drawBackground(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  session: PhotoSession,
+  bgColor: string,
+): Promise<void> {
+  if (session.customBackground) {
+    // Gambar custom — stretch ke full strip
+    try {
+      const img = await loadImage(session.customBackground.dataUrl);
+      ctx.drawImage(img, 0, 0, width, height);
+    } catch {
+      // Fallback ke warna solid kalau gagal load
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, width, height);
+    }
+  } else {
+    // Warna solid
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, width, height);
+  }
+}
+
+// ============================================
+// DRAW SATU FOTO
+// ============================================
 async function drawPhoto(
   ctx: CanvasRenderingContext2D,
   dataUrl: string,
@@ -38,6 +73,7 @@ async function drawPhoto(
 ): Promise<void> {
   const img = await loadImage(dataUrl);
 
+  // Tanpa filter
   ctx.save();
   ctx.beginPath();
   ctx.roundRect(x, y, width, height, 6);
@@ -45,11 +81,12 @@ async function drawPhoto(
   ctx.drawImage(img, x, y, width, height);
   ctx.restore();
 
+  // Dengan filter — pakai offscreen canvas
   if (filter !== "none") {
-    const offscreen = document.createElement("canvas");
-    offscreen.width = width;
-    offscreen.height = height;
-    const offCtx = offscreen.getContext("2d")!;
+    const off = document.createElement("canvas");
+    off.width = width;
+    off.height = height;
+    const offCtx = off.getContext("2d")!;
     offCtx.drawImage(img, 0, 0, width, height);
     applyFilter(offCtx, width, height, filter);
 
@@ -57,12 +94,14 @@ async function drawPhoto(
     ctx.beginPath();
     ctx.roundRect(x, y, width, height, 6);
     ctx.clip();
-    ctx.drawImage(offscreen, x, y);
+    ctx.drawImage(off, x, y);
     ctx.restore();
   }
 }
 
-// Posisi sticker dalam persen → koordinat canvas absolut
+// ============================================
+// DRAW STICKERS
+// ============================================
 function drawPlacedStickers(
   ctx: CanvasRenderingContext2D,
   stickers: PlacedSticker[],
@@ -70,41 +109,26 @@ function drawPlacedStickers(
   canvasHeight: number,
 ): void {
   if (stickers.length === 0) return;
-
   ctx.font = "32px serif";
   ctx.textBaseline = "middle";
   ctx.textAlign = "center";
-  ctx.shadowColor = "rgba(0,0,0,0.4)";
+  ctx.shadowColor = "rgba(0,0,0,0.3)";
   ctx.shadowBlur = 4;
-
-  for (const sticker of stickers) {
-    const x = (sticker.x / 100) * canvasWidth;
-    const y = (sticker.y / 100) * canvasHeight;
-    ctx.fillText(sticker.emoji, x, y);
+  for (const s of stickers) {
+    const x = (s.x / 100) * canvasWidth;
+    const y = (s.y / 100) * canvasHeight;
+    ctx.fillText(s.emoji, x, y);
   }
-
   ctx.shadowBlur = 0;
 }
 
-function drawLabel(
-  ctx: CanvasRenderingContext2D,
-  template: Template,
-  stripHeight: number,
-): void {
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillStyle = template.accentColor + "88";
-  ctx.font = "11px monospace";
-  ctx.fillText(
-    "✦  photobooth  ✦",
-    STRIP_WIDTH / 2,
-    stripHeight - PADDING_BOTTOM / 2 - 4,
-  );
-}
-
+// ============================================
+// GENERATE IMAGE — fungsi utama
+// ============================================
 export async function generateImage(
   session: PhotoSession,
   template: Template,
+  bgColor = "#ffffff",
 ): Promise<string> {
   const photoCount = session.images.length;
   const stripHeight = getStripHeight(photoCount);
@@ -116,13 +140,10 @@ export async function generateImage(
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas context not available");
 
-  ctx.fillStyle = template.bgColor;
-  ctx.fillRect(0, 0, STRIP_WIDTH, stripHeight);
+  // 1. Background (gambar atau warna solid)
+  await drawBackground(ctx, STRIP_WIDTH, stripHeight, session, bgColor);
 
-  ctx.strokeStyle = template.accentColor + "33";
-  ctx.lineWidth = 1;
-  ctx.strokeRect(8, 8, STRIP_WIDTH - 16, stripHeight - 16);
-
+  // 2. Foto di atas background
   for (let i = 0; i < photoCount; i++) {
     const x = PADDING_X;
     const y = PADDING_TOP + i * (PHOTO_HEIGHT + PHOTO_GAP);
@@ -137,8 +158,8 @@ export async function generateImage(
     );
   }
 
+  // 3. Stickers
   drawPlacedStickers(ctx, session.placedStickers, STRIP_WIDTH, stripHeight);
-  drawLabel(ctx, template, stripHeight);
 
   return canvas.toDataURL("image/png");
 }

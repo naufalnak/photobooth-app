@@ -1,3 +1,4 @@
+// store/useBoothStore.ts
 import { create } from "zustand";
 import {
   type Photo,
@@ -6,6 +7,7 @@ import {
   type PhotoSession,
   type CaptureStatus,
   type PlacedSticker,
+  type CustomBackground,
 } from "@/types";
 
 export const TEMPLATES: Template[] = [
@@ -44,11 +46,23 @@ export const STICKERS = [
   { id: "camera", emoji: "📷", label: "Camera" },
 ];
 
+// Preset background colors
+export const BG_PRESETS = [
+  { id: "white", color: "#ffffff", label: "White" },
+  { id: "black", color: "#1a1a1a", label: "Black" },
+  { id: "pink", color: "#fdf2f8", label: "Pink" },
+  { id: "cream", color: "#fef9ef", label: "Cream" },
+  { id: "mint", color: "#f0fdf4", label: "Mint" },
+  { id: "lavender", color: "#f5f3ff", label: "Lavender" },
+];
+
 interface BoothState {
   photos: Photo[];
   selectedTemplate: Template;
   selectedFilter: FilterType;
   placedStickers: PlacedSticker[];
+  customBackground: CustomBackground | null;
+  bgColor: string; // warna solid background
   captureStatus: CaptureStatus;
   countdown: number;
   finalSession: PhotoSession | null;
@@ -60,6 +74,9 @@ interface BoothState {
   movePlacedSticker: (instanceId: string, x: number, y: number) => void;
   removePlacedSticker: (instanceId: string) => void;
   clearPlacedStickers: () => void;
+
+  setCustomBackground: (bg: CustomBackground | null) => void;
+  setBgColor: (color: string) => void;
 
   addPhoto: (photo: Photo) => void;
   clearPhotos: () => void;
@@ -76,6 +93,8 @@ const defaultState = {
   selectedTemplate: TEMPLATES[0],
   selectedFilter: "none" as FilterType,
   placedStickers: [],
+  customBackground: null,
+  bgColor: "#ffffff", // default putih
   captureStatus: "idle" as CaptureStatus,
   countdown: 3,
   finalSession: null,
@@ -106,26 +125,35 @@ export const useBoothStore = create<BoothState>((set, get) => ({
 
   clearPlacedStickers: () => set({ placedStickers: [] }),
 
+  setCustomBackground: (bg) => set({ customBackground: bg }),
+
+  setBgColor: (color) => set({ bgColor: color }),
+
   addPhoto: (photo) => set((state) => ({ photos: [...state.photos, photo] })),
 
   clearPhotos: () => set({ photos: [] }),
-
   setCaptureStatus: (status) => set({ captureStatus: status }),
   setCountdown: (n) => set({ countdown: n }),
 
   buildSession: (): PhotoSession => {
-    const { photos, selectedTemplate, selectedFilter, placedStickers } = get();
+    const {
+      photos,
+      selectedTemplate,
+      selectedFilter,
+      placedStickers,
+      customBackground,
+    } = get();
     return {
       id: crypto.randomUUID(),
       images: photos.map((p) => p.dataUrl),
       template: selectedTemplate.id,
       filter: selectedFilter,
       placedStickers,
+      customBackground,
       createdAt: new Date(),
     };
   },
 
   setFinalSession: (session) => set({ finalSession: session }),
-
   resetAll: () => set({ ...defaultState }),
 }));

@@ -1,6 +1,4 @@
-// ============================================
-// FILTER
-// ============================================
+// types/index.ts
 export type FilterType = "none" | "grayscale" | "sepia" | "vintage";
 
 export interface Sticker {
@@ -13,7 +11,7 @@ export interface PlacedSticker {
   instanceId: string;
   stickerId: string;
   emoji: string;
-  x: number; // persen 0–100 relatif terhadap preview container
+  x: number;
   y: number;
 }
 
@@ -33,12 +31,18 @@ export interface Photo {
   takenAt: Date;
 }
 
+export interface CustomBackground {
+  dataUrl: string;
+  filename: string;
+}
+
 export interface PhotoSession {
   id: string;
   images: string[];
   template: string;
   filter: FilterType;
   placedStickers: PlacedSticker[];
+  customBackground: CustomBackground | null;
   createdAt: Date;
 }
 

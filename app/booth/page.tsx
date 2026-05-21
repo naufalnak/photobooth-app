@@ -8,7 +8,7 @@ import CountdownDisplay from "@/components/CountdownDisplay";
 import PhotoStrip from "@/components/PhotoStrip";
 import { captureSequence } from "@/lib/capture";
 import { useBoothStore } from "@/store/useBoothStore";
-import type { Photo } from "@/types";
+import type { Photo, PhotoSession } from "@/types";
 
 export default function BoothPage() {
   const router = useRouter();
@@ -26,7 +26,6 @@ export default function BoothPage() {
     setCountdown,
     selectedFilter,
     selectedTemplate,
-    buildSession,
     setFinalSession,
   } = useBoothStore();
 
@@ -46,7 +45,8 @@ export default function BoothPage() {
     setCaptureStatus("countdown");
 
     try {
-      await captureSequence(videoEl, {
+      // captureSequence mengembalikan array foto langsung
+      const capturedPhotos = await captureSequence(videoEl, {
         filter: selectedFilter,
         onCountdownTick: (n) => setCountdown(n),
         onPhotoTaken: (photo: Photo) => addPhoto(photo),
@@ -54,15 +54,29 @@ export default function BoothPage() {
       });
 
       setCaptureStatus("processing");
-      const session = buildSession();
+
+      // Bangun session dari capturedPhotos langsung — tidak bergantung store timing
+      const session: PhotoSession = {
+        id: crypto.randomUUID(),
+        images: capturedPhotos.map((p) => p.dataUrl),
+        template: selectedTemplate.id,
+        filter: selectedFilter,
+        placedStickers: [],
+        customBackground: null,
+        createdAt: new Date(),
+      };
+
       setFinalSession(session);
 
-      setTimeout(() => router.push("/result"), 600);
+      // Tunggu sebentar biar setFinalSession sempat tersimpan
+      await new Promise((r) => setTimeout(r, 300));
+
+      router.push("/result");
     } catch (err) {
       console.error("Capture failed:", err);
       setCaptureStatus("idle");
     }
-  }, [isCapturing, selectedFilter]);
+  }, [isCapturing, selectedFilter, selectedTemplate]);
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-4 py-8 gap-5">
@@ -105,34 +119,19 @@ export default function BoothPage() {
         )}
       </div>
 
-      {/* Photo strip */}
+      {/* Photo strip preview */}
       <div className="w-full max-w-sm">
         <PhotoStrip photos={photos} />
-      </div>
-
-      {/* Template info */}
-      <div className="flex items-center gap-2">
-        <div
-          className="w-3 h-3 rounded-full"
-          style={{ backgroundColor: selectedTemplate.accentColor }}
-        />
-        <span className="text-neutral-400 text-xs">
-          {selectedTemplate.name} frame
-        </span>
       </div>
 
       {/* CTA */}
       <button
         onClick={handleStartCapture}
         disabled={!isCameraReady || isCapturing}
-        className="w-full max-w-sm py-4 rounded-2xl font-semibold text-base transition-all duration-200 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
-        style={{
-          backgroundColor: selectedTemplate.accentColor,
-          color: selectedTemplate.bgColor,
-        }}>
+        className="w-full max-w-sm py-4 rounded-2xl font-semibold text-base transition-all duration-200 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed bg-white text-black">
         {isCapturing
-          ? `Taking photo ${photos.length + 1} of 4...`
-          : "Take Photos"}
+          ? `Mengambil foto ${photos.length + 1} dari 4...`
+          : "Mulai Foto"}
       </button>
     </main>
   );
