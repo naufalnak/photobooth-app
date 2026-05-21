@@ -1,4 +1,3 @@
-// components/StripEditor.tsx
 "use client";
 
 import { useRef, useEffect, useCallback, useState } from "react";
@@ -358,8 +357,19 @@ function StickerTab() {
 
   if (!finalSession) return null;
 
+  // ✅ Fix: pakai newSticker() yang ada di luar komponen
   const handleAdd = (emoji: string, stickerId: string) => {
     addPlacedSticker(newSticker(emoji, stickerId));
+  };
+
+  // ✅ Update: Lock scroll saat touch di area strip
+  const handleContainerTouchStart = () => {
+    document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
+  };
+  const handleContainerTouchEnd = () => {
+    document.body.style.overflow = "";
+    document.body.style.touchAction = "";
   };
 
   return (
@@ -387,10 +397,14 @@ function StickerTab() {
         <p className="text-xs text-neutral-500 tracking-widest uppercase">
           Atur posisi
         </p>
+        {/* ✅ Update: Lock scroll saat interaksi di sini */}
         <div
           ref={containerRef}
           className="relative w-full rounded-xl overflow-hidden"
-          style={{ aspectRatio: "400 / 1148" }}>
+          style={{ aspectRatio: "400 / 1148" }}
+          onTouchStart={handleContainerTouchStart}
+          onTouchEnd={handleContainerTouchEnd}
+          onTouchCancel={handleContainerTouchEnd}>
           <StripCanvas
             images={finalSession.images}
             filter={selectedFilter}
@@ -411,7 +425,7 @@ function StickerTab() {
 
         {placedStickers.length > 0 ? (
           <p className="text-xs text-neutral-600 text-center">
-            Drag untuk pindah · Double click untuk hapus
+            Drag untuk pindah · Double tap untuk hapus
           </p>
         ) : (
           <p className="text-xs text-neutral-600 text-center">
