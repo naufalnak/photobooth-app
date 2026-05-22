@@ -5,9 +5,8 @@ export async function startCamera(
   const stream = await navigator.mediaDevices.getUserMedia({
     video: {
       facingMode,
-      aspectRatio: { ideal: 4 / 3 },
       width: { ideal: 1280 },
-      height: { ideal: 960 },
+      height: { ideal: 1280 },
     },
     audio: false,
   });
@@ -29,23 +28,29 @@ export function stopCamera(stream: MediaStream | null) {
 
 export function captureFrame(
   videoEl: HTMLVideoElement,
-  facingMode: "user" | "environment" = "user", // ← tambah parameter
+  facingMode: "user" | "environment" = "user",
 ): string {
-  const width = videoEl.videoWidth || 1280;
-  const height = videoEl.videoHeight || 960;
+  const vw = videoEl.videoWidth || 1280;
+  const vh = videoEl.videoHeight || 720;
 
+  const size = Math.min(vw, vh);
+  const sx = (vw - size) / 2;
+  const sy = (vh - size) / 2;
+
+  const OUTPUT = 640;
   const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
+  canvas.width = OUTPUT;
+  canvas.height = OUTPUT;
 
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas context not available");
 
   if (facingMode !== "environment") {
-    ctx.translate(width, 0);
+    ctx.translate(OUTPUT, 0);
     ctx.scale(-1, 1);
   }
 
-  ctx.drawImage(videoEl, 0, 0, width, height);
+  ctx.drawImage(videoEl, sx, sy, size, size, 0, 0, OUTPUT, OUTPUT);
+
   return canvas.toDataURL("image/png");
 }
