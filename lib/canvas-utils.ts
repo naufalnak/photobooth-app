@@ -7,7 +7,7 @@ import type { PhotoSession, Template, PlacedSticker } from "@/types";
 // ============================================
 const STRIP_WIDTH = 400;
 const PHOTO_WIDTH = 340;
-const PHOTO_HEIGHT = 255; // rasio 4:3
+const PHOTO_HEIGHT = 340; // rasio 4:3
 const PHOTO_GAP = 12;
 const PADDING_X = 30; // padding kiri-kanan foto
 const PADDING_TOP = 40; // ruang atas (untuk teks/dekorasi)

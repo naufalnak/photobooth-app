@@ -83,7 +83,7 @@ export default function Camera({
   }, [isSwitching, status]);
 
   return (
-    <div className="relative w-full aspect-[4/3] bg-neutral-100 rounded-2xl overflow-hidden">
+    <div className="relative w-full aspect-[3/4] bg-neutral-100 rounded-2xl overflow-hidden">
       {/* Video */}
       <video
         ref={videoRef}

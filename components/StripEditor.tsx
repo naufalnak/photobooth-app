@@ -407,7 +407,7 @@ function StickerTab() {
         <div
           ref={containerRef}
           className="relative w-full rounded-xl overflow-hidden"
-          style={{ aspectRatio: "400 / 1148" }}
+          style={{ aspectRatio: "400 / 1152" }}
           onTouchStart={handleContainerTouchStart}
           onTouchEnd={handleContainerTouchEnd}
           onTouchCancel={handleContainerTouchEnd}>
