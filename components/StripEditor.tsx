@@ -93,7 +93,7 @@ function StickyPreview() {
       <div
         ref={containerRef}
         className="relative rounded-xl overflow-hidden shadow-2xl shadow-black/60"
-        style={{ width: "160px" }}>
+        style={{ width: "200px" }}>
         <StripCanvas
           images={finalSession.images}
           filter={selectedFilter}
@@ -407,7 +407,7 @@ function StickerTab() {
         <div
           ref={containerRef}
           className="relative w-full rounded-xl overflow-hidden"
-          style={{ aspectRatio: "400 / 1152" }}
+          style={{ aspectRatio: "440 / 1156" }}
           onTouchStart={handleContainerTouchStart}
           onTouchEnd={handleContainerTouchEnd}
           onTouchCancel={handleContainerTouchEnd}>
@@ -490,13 +490,13 @@ export function StripCanvas({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const W = 400;
-    const PHOTO_W = 340;
-    const PHOTO_H = 255;
-    const GAP = 12;
-    const PAD_X = 30;
-    const PAD_TOP = 40;
-    const PAD_BOT = 56;
+    const W = 440;
+    const PHOTO_W = 400;
+    const PHOTO_H = 267; // 3:2 landscape
+    const GAP = 10;
+    const PAD_X = 20;
+    const PAD_TOP = 36;
+    const PAD_BOT = 52;
     const totalH =
       PAD_TOP + images.length * PHOTO_H + (images.length - 1) * GAP + PAD_BOT;
 

@@ -33,24 +33,33 @@ export function captureFrame(
   const vw = videoEl.videoWidth || 1280;
   const vh = videoEl.videoHeight || 720;
 
-  const size = Math.min(vw, vh);
-  const sx = (vw - size) / 2;
-  const sy = (vh - size) / 2;
+  const targetRatio = 3 / 2;
+  let cropW = vw;
+  let cropH = vw / targetRatio;
 
-  const OUTPUT = 640;
+  if (cropH > vh) {
+    cropH = vh;
+    cropW = vh * targetRatio;
+  }
+
+  const sx = (vw - cropW) / 2;
+  const sy = (vh - cropH) / 2;
+
+  const OUTPUT_W = 900;
+  const OUTPUT_H = 600;
+
   const canvas = document.createElement("canvas");
-  canvas.width = OUTPUT;
-  canvas.height = OUTPUT;
+  canvas.width = OUTPUT_W;
+  canvas.height = OUTPUT_H;
 
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas context not available");
 
   if (facingMode !== "environment") {
-    ctx.translate(OUTPUT, 0);
+    ctx.translate(OUTPUT_W, 0);
     ctx.scale(-1, 1);
   }
 
-  ctx.drawImage(videoEl, sx, sy, size, size, 0, 0, OUTPUT, OUTPUT);
-
+  ctx.drawImage(videoEl, sx, sy, cropW, cropH, 0, 0, OUTPUT_W, OUTPUT_H);
   return canvas.toDataURL("image/png");
 }

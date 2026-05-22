@@ -5,13 +5,13 @@ import type { PhotoSession, Template, PlacedSticker } from "@/types";
 // ============================================
 // LAYOUT
 // ============================================
-const STRIP_WIDTH = 400;
-const PHOTO_WIDTH = 340;
-const PHOTO_HEIGHT = 340; // rasio 4:3
-const PHOTO_GAP = 12;
-const PADDING_X = 30; // padding kiri-kanan foto
-const PADDING_TOP = 40; // ruang atas (untuk teks/dekorasi)
-const PADDING_BOTTOM = 56; // ruang bawah (untuk label)
+const STRIP_WIDTH = 440;
+const PHOTO_WIDTH = 400; // lebar foto
+const PHOTO_HEIGHT = 267; // tinggi foto — rasio 3:2
+const PHOTO_GAP = 10;
+const PADDING_X = 20;
+const PADDING_TOP = 36;
+const PADDING_BOTTOM = 52;
 
 function getStripHeight(photoCount: number): number {
   return (
