@@ -8,6 +8,7 @@ import {
   type CaptureStatus,
   type PlacedSticker,
   type CustomBackground,
+  type CustomText,
 } from "@/types";
 
 export const TEMPLATES: Template[] = [
@@ -46,7 +47,6 @@ export const STICKERS = [
   { id: "camera", emoji: "📷", label: "Camera" },
 ];
 
-// Preset background colors
 export const BG_PRESETS = [
   { id: "white", color: "#ffffff", label: "White" },
   { id: "black", color: "#1a1a1a", label: "Black" },
@@ -56,13 +56,22 @@ export const BG_PRESETS = [
   { id: "lavender", color: "#f5f3ff", label: "Lavender" },
 ];
 
+// Ukuran teks → pixel di canvas
+export const TEXT_SIZE_MAP: Record<CustomText["size"], number> = {
+  sm: 24,
+  md: 36,
+  lg: 52,
+  xl: 68,
+};
+
 interface BoothState {
   photos: Photo[];
   selectedTemplate: Template;
   selectedFilter: FilterType;
   placedStickers: PlacedSticker[];
   customBackground: CustomBackground | null;
-  bgColor: string; // warna solid background
+  customText: CustomText | null;
+  bgColor: string;
   captureStatus: CaptureStatus;
   countdown: number;
   finalSession: PhotoSession | null;
@@ -77,6 +86,8 @@ interface BoothState {
 
   setCustomBackground: (bg: CustomBackground | null) => void;
   setBgColor: (color: string) => void;
+
+  setCustomText: (text: CustomText | null) => void;
 
   addPhoto: (photo: Photo) => void;
   clearPhotos: () => void;
@@ -94,7 +105,8 @@ const defaultState = {
   selectedFilter: "none" as FilterType,
   placedStickers: [],
   customBackground: null,
-  bgColor: "#ffffff", // default putih
+  customText: null,
+  bgColor: "#ffffff",
   captureStatus: "idle" as CaptureStatus,
   countdown: 3,
   finalSession: null,
@@ -126,8 +138,9 @@ export const useBoothStore = create<BoothState>((set, get) => ({
   clearPlacedStickers: () => set({ placedStickers: [] }),
 
   setCustomBackground: (bg) => set({ customBackground: bg }),
-
   setBgColor: (color) => set({ bgColor: color }),
+
+  setCustomText: (text) => set({ customText: text }),
 
   addPhoto: (photo) => set((state) => ({ photos: [...state.photos, photo] })),
 
@@ -142,6 +155,7 @@ export const useBoothStore = create<BoothState>((set, get) => ({
       selectedFilter,
       placedStickers,
       customBackground,
+      customText,
     } = get();
     return {
       id: crypto.randomUUID(),
@@ -150,6 +164,7 @@ export const useBoothStore = create<BoothState>((set, get) => ({
       filter: selectedFilter,
       placedStickers,
       customBackground,
+      customText,
       createdAt: new Date(),
     };
   },

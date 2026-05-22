@@ -46,6 +46,12 @@ export interface CustomBackground {
   filename: string;
 }
 
+export interface CustomText {
+  value: string; // isi teks
+  color: string; // hex color
+  size: "sm" | "md" | "lg" | "xl";
+}
+
 export interface PhotoSession {
   id: string;
   images: string[];
@@ -53,6 +59,7 @@ export interface PhotoSession {
   filter: FilterType;
   placedStickers: PlacedSticker[];
   customBackground: CustomBackground | null;
+  customText: CustomText | null;
   createdAt: Date;
 }
 

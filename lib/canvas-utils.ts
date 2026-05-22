@@ -1,23 +1,24 @@
-// lib/canvas-utils.ts
 import { applyFilter } from "@/lib/filters";
 import type { PhotoSession, Template, PlacedSticker } from "@/types";
+import { TEXT_SIZE_MAP } from "@/store/useBoothStore";
 
-// ============================================
-// LAYOUT
-// ============================================
+const WATERMARK_TEXT = "snapbooth.app";
+
 const STRIP_WIDTH = 440;
-const PHOTO_WIDTH = 400; // lebar foto
-const PHOTO_HEIGHT = 267; // tinggi foto — rasio 3:2
+const PHOTO_WIDTH = 400;
+const PHOTO_HEIGHT = 267;
 const PHOTO_GAP = 10;
 const PADDING_X = 20;
 const PADDING_TOP = 36;
-const PADDING_BOTTOM = 52;
+const PADDING_BOTTOM = 32;
+const BOTTOM_AREA = 180;
 
 function getStripHeight(photoCount: number): number {
   return (
     PADDING_TOP +
     photoCount * PHOTO_HEIGHT +
     (photoCount - 1) * PHOTO_GAP +
+    BOTTOM_AREA +
     PADDING_BOTTOM
   );
 }
@@ -31,37 +32,6 @@ function loadImage(dataUrl: string): Promise<HTMLImageElement> {
   });
 }
 
-// ============================================
-// DRAW BACKGROUND
-// Bisa gambar custom atau warna solid
-// ============================================
-async function drawBackground(
-  ctx: CanvasRenderingContext2D,
-  width: number,
-  height: number,
-  session: PhotoSession,
-  bgColor: string,
-): Promise<void> {
-  if (session.customBackground) {
-    // Gambar custom — stretch ke full strip
-    try {
-      const img = await loadImage(session.customBackground.dataUrl);
-      ctx.drawImage(img, 0, 0, width, height);
-    } catch {
-      // Fallback ke warna solid kalau gagal load
-      ctx.fillStyle = bgColor;
-      ctx.fillRect(0, 0, width, height);
-    }
-  } else {
-    // Warna solid
-    ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, width, height);
-  }
-}
-
-// ============================================
-// DRAW SATU FOTO
-// ============================================
 async function drawPhoto(
   ctx: CanvasRenderingContext2D,
   dataUrl: string,
@@ -73,7 +43,6 @@ async function drawPhoto(
 ): Promise<void> {
   const img = await loadImage(dataUrl);
 
-  // Tanpa filter
   ctx.save();
   ctx.beginPath();
   ctx.roundRect(x, y, width, height, 6);
@@ -81,7 +50,6 @@ async function drawPhoto(
   ctx.drawImage(img, x, y, width, height);
   ctx.restore();
 
-  // Dengan filter — pakai offscreen canvas
   if (filter !== "none") {
     const off = document.createElement("canvas");
     off.width = width;
@@ -99,9 +67,6 @@ async function drawPhoto(
   }
 }
 
-// ============================================
-// DRAW STICKERS
-// ============================================
 function drawPlacedStickers(
   ctx: CanvasRenderingContext2D,
   stickers: PlacedSticker[],
@@ -115,16 +80,29 @@ function drawPlacedStickers(
   ctx.shadowColor = "rgba(0,0,0,0.3)";
   ctx.shadowBlur = 4;
   for (const s of stickers) {
-    const x = (s.x / 100) * canvasWidth;
-    const y = (s.y / 100) * canvasHeight;
-    ctx.fillText(s.emoji, x, y);
+    ctx.fillText(
+      s.emoji,
+      (s.x / 100) * canvasWidth,
+      (s.y / 100) * canvasHeight,
+    );
   }
   ctx.shadowBlur = 0;
 }
 
-// ============================================
-// GENERATE IMAGE — fungsi utama
-// ============================================
+async function loadGoogleFont(name: string, url: string): Promise<void> {
+  const existing = Array.from(document.fonts).find(
+    (f) => f.family === name && f.status === "loaded",
+  );
+  if (existing) return;
+
+  const font = new FontFace(name, `url(${url})`);
+  const loaded = await font.load();
+  document.fonts.add(loaded);
+}
+
+const ITALIANA_URL =
+  "https://fonts.gstatic.com/s/italiana/v24/QldNNTtLsx4E__B0XTmRf31ZcA.woff2";
+
 export async function generateImage(
   session: PhotoSession,
   template: Template,
@@ -133,6 +111,13 @@ export async function generateImage(
   const photoCount = session.images.length;
   const stripHeight = getStripHeight(photoCount);
 
+  // Load font dulu sebelum draw apapun
+  try {
+    await loadGoogleFont("Italiana", ITALIANA_URL);
+  } catch {
+    // Fallback ke serif kalau gagal load
+  }
+
   const canvas = document.createElement("canvas");
   canvas.width = STRIP_WIDTH;
   canvas.height = stripHeight;
@@ -140,10 +125,21 @@ export async function generateImage(
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas context not available");
 
-  // 1. Background (gambar atau warna solid)
-  await drawBackground(ctx, STRIP_WIDTH, stripHeight, session, bgColor);
+  // 1. Background — full canvas
+  if (session.customBackground) {
+    try {
+      const img = await loadImage(session.customBackground.dataUrl);
+      ctx.drawImage(img, 0, 0, STRIP_WIDTH, stripHeight);
+    } catch {
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, STRIP_WIDTH, stripHeight);
+    }
+  } else {
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, STRIP_WIDTH, stripHeight);
+  }
 
-  // 2. Foto di atas background
+  // 2. Foto
   for (let i = 0; i < photoCount; i++) {
     const x = PADDING_X;
     const y = PADDING_TOP + i * (PHOTO_HEIGHT + PHOTO_GAP);
@@ -158,8 +154,67 @@ export async function generateImage(
     );
   }
 
-  // 3. Stickers
-  drawPlacedStickers(ctx, session.placedStickers, STRIP_WIDTH, stripHeight);
+  // 3. Stickers — hanya di area foto
+  const photoAreaBottom =
+    PADDING_TOP + photoCount * PHOTO_HEIGHT + (photoCount - 1) * PHOTO_GAP;
+
+  drawPlacedStickers(ctx, session.placedStickers, STRIP_WIDTH, photoAreaBottom);
+
+  // 4. Custom text
+  const bottomAreaStart = photoAreaBottom;
+  const bottomAreaEnd = stripHeight - PADDING_BOTTOM;
+  const bottomCenter =
+    bottomAreaStart + (bottomAreaEnd - bottomAreaStart) * 0.5;
+
+  if (session.customText?.value?.trim()) {
+    const fontSize = TEXT_SIZE_MAP[session.customText.size];
+
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = session.customText.color;
+    ctx.font = `${fontSize}px Italiana, serif`;
+
+    const maxWidth = STRIP_WIDTH - PADDING_X * 2;
+    const words = session.customText.value.split(" ");
+    let line = "";
+    const lines: string[] = [];
+
+    for (const word of words) {
+      const test = line + (line ? " " : "") + word;
+      if (ctx.measureText(test).width > maxWidth && line) {
+        lines.push(line);
+        line = word;
+      } else {
+        line = test;
+      }
+    }
+    lines.push(line);
+
+    const lineHeight = fontSize * 1.15;
+    const totalTextH = lines.length * lineHeight;
+    let textY = bottomCenter - totalTextH / 2 + lineHeight / 2;
+
+    for (const l of lines) {
+      ctx.fillText(l, STRIP_WIDTH / 2, textY);
+      textY += lineHeight;
+    }
+
+    ctx.restore();
+  }
+
+  // 5. Watermark
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#bbbbbb";
+  ctx.font = "14px monospace";
+  ctx.fillText(
+    WATERMARK_TEXT,
+    STRIP_WIDTH / 2,
+    stripHeight - PADDING_BOTTOM / 2,
+  );
+  ctx.restore();
 
   return canvas.toDataURL("image/png");
 }

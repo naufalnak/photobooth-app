@@ -51,6 +51,7 @@ export default function ResultPage() {
     selectedFilter,
     placedStickers,
     customBackground,
+    customText,
     bgColor,
     setFinalSession,
     resetAll,
@@ -81,6 +82,7 @@ export default function ResultPage() {
         filter: selectedFilter,
         placedStickers,
         customBackground,
+        customText,
       };
 
       setFinalSession(updatedSession);

@@ -4,8 +4,9 @@ import { useRef, useEffect, useCallback, useState } from "react";
 import { useBoothStore, STICKERS, BG_PRESETS } from "@/store/useBoothStore";
 import type { PlacedSticker, CustomBackground } from "@/types";
 import { applyFilter } from "@/lib/filters";
+import CustomTextEditor from "@/components/CustomTextEditor";
 
-type EditorTab = "background" | "filter" | "sticker";
+type EditorTab = "background" | "filter" | "sticker" | "text";
 
 // ============================================
 // HELPER FUNCTIONS (di luar komponen)
@@ -36,6 +37,7 @@ export default function StripEditor() {
     { id: "background", label: "Background" },
     { id: "filter", label: "Filter" },
     { id: "sticker", label: "Sticker" },
+    { id: "text", label: "Text" }, // ← tambah
   ];
 
   return (
@@ -67,6 +69,7 @@ export default function StripEditor() {
         {activeTab === "background" && <BackgroundTab />}
         {activeTab === "filter" && <FilterTab />}
         {activeTab === "sticker" && <StickerTab />}
+        {activeTab === "text" && <CustomTextEditor />}
       </div>
     </div>
   );
@@ -82,17 +85,17 @@ function StickyPreview() {
     customBackground,
     bgColor,
     placedStickers,
+    customText,
   } = useBoothStore();
 
   const containerRef = useRef<HTMLDivElement>(null);
-
   if (!finalSession) return null;
 
   return (
     <div className="w-full flex justify-center">
       <div
         ref={containerRef}
-        className="relative rounded-xl overflow-hidden shadow-2xl shadow-black/60"
+        className="relative rounded-xl overflow-hidden shadow-2xl shadow-black/10"
         style={{ width: "200px" }}>
         <StripCanvas
           images={finalSession.images}
@@ -102,7 +105,7 @@ function StickyPreview() {
           compact
         />
 
-        {/* Sticker overlay di preview kecil */}
+        {/* Sticker overlay */}
         {placedStickers.map((s) => (
           <div
             key={s.instanceId}
@@ -113,11 +116,61 @@ function StickyPreview() {
               transform: "translate(-50%, -50%)",
               fontSize: "14px",
               lineHeight: 1,
-              filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.4))",
             }}>
             {s.emoji}
           </div>
         ))}
+
+        {/* Custom text preview */}
+        {customText?.value && (
+          <div
+            style={{
+              padding: "8px 6px 2px",
+              textAlign: "center",
+              background: bgColor,
+            }}>
+            <p
+              style={{
+                color: customText.color,
+                fontSize:
+                  customText.size === "sm"
+                    ? 10
+                    : customText.size === "md"
+                      ? 13
+                      : customText.size === "lg"
+                        ? 17
+                        : 22,
+                fontFamily: "var(--font-italiana), serif", // ← Italiana
+                lineHeight: 1.1,
+                wordBreak: "break-word",
+              }}>
+              {customText.value}
+            </p>
+            <p
+              style={{
+                fontSize: 12,
+                color: "#aaa",
+                marginTop: 2,
+                fontFamily: "monospace",
+              }}>
+              snapbooth.app
+            </p>
+          </div>
+        )}
+
+        {/* Watermark selalu muncul meski tidak ada custom text */}
+        {!customText?.value && (
+          <div
+            style={{
+              padding: "4px 0 6px",
+              textAlign: "center",
+              background: bgColor,
+            }}>
+            <p style={{ fontSize: 12, color: "#aaa", fontFamily: "monospace" }}>
+              snapbooth.app
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
