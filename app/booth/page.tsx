@@ -61,6 +61,7 @@ export default function BoothPage() {
         filter: selectedFilter,
         placedStickers: [],
         customBackground: null,
+        customText: null,
         createdAt: new Date(),
       };
 
@@ -77,142 +78,322 @@ export default function BoothPage() {
 
   return (
     <main
-      className="min-h-screen flex flex-col items-center justify-center px-4 py-8 gap-5"
-      style={{ background: "#f5f2ee", fontFamily: "var(--font-dm-sans)" }}>
-      {/* Header */}
-      <div className="w-full max-w-sm flex items-center justify-between">
-        <Link
-          href="/"
+      style={{
+        minHeight: "100dvh",
+        background: "#f5f2ee",
+        fontFamily: "var(--font-dm-sans)",
+        display: "flex",
+        flexDirection: "column",
+      }}>
+      {/* ============================================
+          PORTRAIT layout
+      ============================================ */}
+      <div
+        className="portrait-layout"
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "20px 16px",
+          gap: 20,
+        }}>
+        {/* Header */}
+        <div
           style={{
-            fontSize: 13,
-            color: "#888",
-            textDecoration: "none",
-            fontFamily: "var(--font-dm-sans)",
-            transition: "color 0.15s",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = "#1a1a1a")}
-          onMouseLeave={(e) => (e.currentTarget.style.color = "#888")}>
-          ← back
-        </Link>
+            width: "100%",
+            maxWidth: 384,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}>
+          <Link
+            href="/"
+            style={{
+              fontSize: 13,
+              color: "#888",
+              textDecoration: "none",
+              fontFamily: "var(--font-dm-sans)",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "#1a1a1a")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "#888")}>
+            ← back
+          </Link>
 
-        {/* Progress dots */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          {[0, 1, 2, 3].map((i) => (
-            <div
-              key={i}
-              style={{
-                width: i < photoCount ? 20 : 8,
-                height: 8,
-                borderRadius: 100,
-                background: i < photoCount ? "#1a1a1a" : "#1a1a1a22",
-                transition: "all 0.3s ease",
-              }}
-            />
-          ))}
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            {[0, 1, 2, 3].map((i) => (
+              <div
+                key={i}
+                style={{
+                  width: i < photoCount ? 20 : 8,
+                  height: 8,
+                  borderRadius: 100,
+                  background: i < photoCount ? "#1a1a1a" : "#1a1a1a22",
+                  transition: "all 0.3s ease",
+                }}
+              />
+            ))}
+          </div>
+
+          <span
+            style={{
+              fontSize: 12,
+              color: "#888",
+              fontFamily: "var(--font-dm-mono)",
+              minWidth: 32,
+              textAlign: "right",
+            }}>
+            {photoCount}/4
+          </span>
         </div>
 
-        <span
-          style={{
-            fontSize: 12,
-            color: "#888",
-            fontFamily: "var(--font-dm-mono)",
-            minWidth: 48,
-            textAlign: "right",
-          }}>
-          {photoCount}/4
-        </span>
+        {/* Camera */}
+        <div
+          className="relative w-full"
+          style={{ maxWidth: 384, position: "relative" }}>
+          <Camera
+            videoRef={videoRef}
+            streamRef={streamRef}
+            onReady={() => setIsCameraReady(true)}
+          />
+          <CountdownDisplay
+            count={useBoothStore((s) => s.countdown)}
+            isActive={captureStatus === "countdown"}
+          />
+          {isFlashing && (
+            <div
+              className="absolute inset-0 rounded-2xl z-20 pointer-events-none"
+              style={{ background: "#fff" }}
+            />
+          )}
+          {captureStatus === "processing" && <ProcessingOverlay />}
+        </div>
+
+        {/* Strip */}
+        <div style={{ width: "100%", maxWidth: 384 }}>
+          <PhotoStrip photos={photos} />
+        </div>
+
+        {/* CTA */}
+        <CaptureButton
+          onClick={handleStartCapture}
+          disabled={!isCameraReady || isCapturing}
+          isCapturing={isCapturing}
+          photoCount={photoCount}
+          style={{ width: "100%", maxWidth: 384 }}
+        />
       </div>
 
-      {/* Camera */}
-      <div className="relative w-full max-w-sm">
-        <Camera
-          videoRef={videoRef}
-          streamRef={streamRef}
-          onReady={() => setIsCameraReady(true)}
-        />
-
-        <CountdownDisplay
-          count={useBoothStore((s) => s.countdown)}
-          isActive={captureStatus === "countdown"}
-        />
-
-        {/* Flash */}
-        {isFlashing && (
-          <div
-            className="absolute inset-0 rounded-2xl z-20 pointer-events-none"
-            style={{ background: "#fff" }}
+      {/* ============================================
+          LANDSCAPE layout
+      ============================================ */}
+      <div
+        className="landscape-layout"
+        style={{
+          flex: 1,
+          display: "none",
+          padding: "12px 20px",
+          gap: 20,
+          alignItems: "stretch",
+        }}>
+        {/* Kiri — kamera */}
+        <div
+          style={{
+            flex: "0 0 55%",
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
+            position: "relative",
+          }}>
+          <Camera
+            videoRef={videoRef}
+            streamRef={streamRef}
+            onReady={() => setIsCameraReady(true)}
           />
-        )}
-
-        {/* Processing overlay */}
-        {captureStatus === "processing" && (
-          <div
-            className="absolute inset-0 rounded-2xl z-20 flex flex-col items-center justify-center gap-3"
-            style={{ background: "rgba(245,242,238,0.85)" }}>
+          <CountdownDisplay
+            count={useBoothStore((s) => s.countdown)}
+            isActive={captureStatus === "countdown"}
+          />
+          {isFlashing && (
             <div
               style={{
-                width: 32,
-                height: 32,
-                border: "2px solid #1a1a1a22",
-                borderTopColor: "#1a1a1a",
-                borderRadius: "50%",
-                animation: "spin 0.8s linear infinite",
+                position: "absolute",
+                inset: 0,
+                background: "#fff",
+                borderRadius: 16,
+                zIndex: 20,
+                pointerEvents: "none",
               }}
             />
-            <p
+          )}
+          {captureStatus === "processing" && <ProcessingOverlay />}
+        </div>
+
+        {/* Kanan — kontrol */}
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            gap: 12,
+          }}>
+          {/* Header */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}>
+            <Link
+              href="/"
+              style={{ fontSize: 13, color: "#888", textDecoration: "none" }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "#1a1a1a")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "#888")}>
+              ← back
+            </Link>
+            <span
               style={{
                 fontSize: 12,
                 color: "#888",
                 fontFamily: "var(--font-dm-mono)",
               }}>
-              developing film...
-            </p>
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+              {photoCount}/4
+            </span>
           </div>
-        )}
+
+          {/* Progress dots */}
+          <div style={{ display: "flex", gap: 6 }}>
+            {[0, 1, 2, 3].map((i) => (
+              <div
+                key={i}
+                style={{
+                  width: i < photoCount ? 28 : 10,
+                  height: 10,
+                  borderRadius: 100,
+                  background: i < photoCount ? "#1a1a1a" : "#1a1a1a22",
+                  transition: "all 0.3s ease",
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Strip preview */}
+          <div style={{ flex: 1, overflow: "hidden" }}>
+            <PhotoStrip photos={photos} />
+          </div>
+
+          {/* CTA */}
+          <CaptureButton
+            onClick={handleStartCapture}
+            disabled={!isCameraReady || isCapturing}
+            isCapturing={isCapturing}
+            photoCount={photoCount}
+            style={{ width: "100%" }}
+          />
+        </div>
       </div>
 
-      {/* Photo strip preview */}
-      <div className="w-full max-w-sm">
-        <PhotoStrip photos={photos} />
-      </div>
-
-      {/* CTA */}
-      <button
-        onClick={handleStartCapture}
-        disabled={!isCameraReady || isCapturing}
-        style={{
-          width: "100%",
-          maxWidth: 384,
-          padding: "16px",
-          background: !isCameraReady || isCapturing ? "#1a1a1a44" : "#1a1a1a",
-          color: "#f5f2ee",
-          fontSize: 15,
-          fontWeight: 600,
-          border: "none",
-          borderRadius: 14,
-          cursor: !isCameraReady || isCapturing ? "not-allowed" : "pointer",
-          fontFamily: "var(--font-dm-sans)",
-          transition: "all 0.15s",
-          letterSpacing: "0.2px",
-        }}
-        onMouseEnter={(e) => {
-          if (isCameraReady && !isCapturing)
-            e.currentTarget.style.transform = "scale(1.01)";
-        }}
-        onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-        onMouseDown={(e) => {
-          if (isCameraReady && !isCapturing)
-            e.currentTarget.style.transform = "scale(0.98)";
-        }}
-        onMouseUp={(e) => {
-          if (isCameraReady && !isCapturing)
-            e.currentTarget.style.transform = "scale(1.01)";
-        }}>
-        {isCapturing
-          ? `taking photo ${photoCount + 1} of 4...`
-          : "Mulai Foto →"}
-      </button>
+      {/* CSS media query untuk switch layout */}
+      <style>{`
+        @media (orientation: landscape) and (max-height: 500px) {
+          .portrait-layout { display: none !important; }
+          .landscape-layout { display: flex !important; }
+        }
+        @media (orientation: portrait) {
+          .portrait-layout { display: flex !important; }
+          .landscape-layout { display: none !important; }
+        }
+      `}</style>
     </main>
+  );
+}
+
+// ============================================
+// SUB COMPONENTS
+// ============================================
+
+function ProcessingOverlay() {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        borderRadius: 16,
+        zIndex: 20,
+        background: "rgba(245,242,238,0.85)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 10,
+      }}>
+      <div
+        style={{
+          width: 28,
+          height: 28,
+          border: "2px solid #1a1a1a22",
+          borderTopColor: "#1a1a1a",
+          borderRadius: "50%",
+          animation: "spin 0.8s linear infinite",
+        }}
+      />
+      <p
+        style={{
+          fontSize: 12,
+          color: "#888",
+          fontFamily: "var(--font-dm-mono)",
+        }}>
+        developing film...
+      </p>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
+function CaptureButton({
+  onClick,
+  disabled,
+  isCapturing,
+  photoCount,
+  style,
+}: {
+  onClick: () => void;
+  disabled: boolean;
+  isCapturing: boolean;
+  photoCount: number;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        padding: "15px",
+        background: disabled ? "#1a1a1a44" : "#1a1a1a",
+        color: "#f5f2ee",
+        fontSize: 15,
+        fontWeight: 600,
+        border: "none",
+        borderRadius: 14,
+        cursor: disabled ? "not-allowed" : "pointer",
+        fontFamily: "var(--font-dm-sans)",
+        transition: "all 0.15s",
+        letterSpacing: "0.2px",
+        ...style,
+      }}
+      onMouseEnter={(e) => {
+        if (!disabled) e.currentTarget.style.transform = "scale(1.01)";
+      }}
+      onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+      onMouseDown={(e) => {
+        if (!disabled) e.currentTarget.style.transform = "scale(0.98)";
+      }}
+      onMouseUp={(e) => {
+        if (!disabled) e.currentTarget.style.transform = "scale(1.01)";
+      }}>
+      {isCapturing ? `taking photo ${photoCount + 1} of 4...` : "Mulai Foto →"}
+    </button>
   );
 }
