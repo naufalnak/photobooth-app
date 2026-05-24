@@ -13,11 +13,36 @@ export async function startCamera(
 
   videoEl.srcObject = stream;
 
+  // Tunggu video siap — dengan fallback timeout
   await new Promise<void>((resolve) => {
-    videoEl.onloadedmetadata = () => resolve();
+    // Kalau sudah ada metadata, langsung resolve
+    if (videoEl.readyState >= 2) {
+      resolve();
+      return;
+    }
+
+    const onReady = () => {
+      videoEl.removeEventListener("loadedmetadata", onReady);
+      videoEl.removeEventListener("loadeddata", onReady);
+      resolve();
+    };
+
+    videoEl.addEventListener("loadedmetadata", onReady);
+    videoEl.addEventListener("loadeddata", onReady);
+
+    // Fallback: kalau 3 detik tidak ada event, tetap lanjut
+    setTimeout(resolve, 3000);
   });
 
-  await videoEl.play();
+  // Play dengan error handling
+  try {
+    await videoEl.play();
+  } catch {
+    // Autoplay mungkin diblokir — coba lagi sekali
+    videoEl.muted = true;
+    await videoEl.play();
+  }
+
   return stream;
 }
 
