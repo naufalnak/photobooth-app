@@ -75,6 +75,87 @@ export default function BoothPage() {
   }, [isCapturing, selectedFilter, selectedTemplate]);
 
   const photoCount = photos.length;
+  const countdown = useBoothStore((s) => s.countdown);
+
+  // Shared camera area — satu instance, layout berubah via CSS
+  const cameraArea = (
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      <Camera
+        videoRef={videoRef}
+        streamRef={streamRef}
+        onReady={() => setIsCameraReady(true)}
+      />
+      <CountdownDisplay
+        count={countdown}
+        isActive={captureStatus === "countdown"}
+      />
+      {isFlashing && (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "#fff",
+            borderRadius: 16,
+            zIndex: 20,
+            pointerEvents: "none",
+          }}
+        />
+      )}
+      {captureStatus === "processing" && <ProcessingOverlay />}
+    </div>
+  );
+
+  const captureBtn = (
+    <CaptureButton
+      onClick={handleStartCapture}
+      disabled={!isCameraReady || isCapturing}
+      isCapturing={isCapturing}
+      photoCount={photoCount}
+    />
+  );
+
+  const progressDots = (
+    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      {[0, 1, 2, 3].map((i) => (
+        <div
+          key={i}
+          style={{
+            width: i < photoCount ? 20 : 8,
+            height: 8,
+            borderRadius: 100,
+            background: i < photoCount ? "#1a1a1a" : "#1a1a1a22",
+            transition: "all 0.3s ease",
+          }}
+        />
+      ))}
+    </div>
+  );
+
+  const backLink = (
+    <Link
+      href="/"
+      style={{
+        fontSize: 13,
+        color: "#888",
+        textDecoration: "none",
+        fontFamily: "var(--font-dm-sans)",
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.color = "#1a1a1a")}
+      onMouseLeave={(e) => (e.currentTarget.style.color = "#888")}>
+      ← back
+    </Link>
+  );
+
+  const counter = (
+    <span
+      style={{
+        fontSize: 12,
+        color: "#888",
+        fontFamily: "var(--font-dm-mono)",
+      }}>
+      {photoCount}/4
+    </span>
+  );
 
   return (
     <main
@@ -82,22 +163,18 @@ export default function BoothPage() {
         minHeight: "100dvh",
         background: "#f5f2ee",
         fontFamily: "var(--font-dm-sans)",
-        display: "flex",
-        flexDirection: "column",
       }}>
-      {/* ============================================
-          PORTRAIT layout
-      ============================================ */}
+      {/* == PORTRAIT == */}
       <div
-        className="portrait-layout"
+        className="booth-portrait"
         style={{
-          flex: 1,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
           padding: "20px 16px",
           gap: 20,
+          minHeight: "100dvh",
         }}>
         {/* Header */}
         <div
@@ -108,67 +185,13 @@ export default function BoothPage() {
             alignItems: "center",
             justifyContent: "space-between",
           }}>
-          <Link
-            href="/"
-            style={{
-              fontSize: 13,
-              color: "#888",
-              textDecoration: "none",
-              fontFamily: "var(--font-dm-sans)",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "#1a1a1a")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "#888")}>
-            ← back
-          </Link>
-
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            {[0, 1, 2, 3].map((i) => (
-              <div
-                key={i}
-                style={{
-                  width: i < photoCount ? 20 : 8,
-                  height: 8,
-                  borderRadius: 100,
-                  background: i < photoCount ? "#1a1a1a" : "#1a1a1a22",
-                  transition: "all 0.3s ease",
-                }}
-              />
-            ))}
-          </div>
-
-          <span
-            style={{
-              fontSize: 12,
-              color: "#888",
-              fontFamily: "var(--font-dm-mono)",
-              minWidth: 32,
-              textAlign: "right",
-            }}>
-            {photoCount}/4
-          </span>
+          {backLink}
+          {progressDots}
+          {counter}
         </div>
 
         {/* Camera */}
-        <div
-          className="relative w-full"
-          style={{ maxWidth: 384, position: "relative" }}>
-          <Camera
-            videoRef={videoRef}
-            streamRef={streamRef}
-            onReady={() => setIsCameraReady(true)}
-          />
-          <CountdownDisplay
-            count={useBoothStore((s) => s.countdown)}
-            isActive={captureStatus === "countdown"}
-          />
-          {isFlashing && (
-            <div
-              className="absolute inset-0 rounded-2xl z-20 pointer-events-none"
-              style={{ background: "#fff" }}
-            />
-          )}
-          {captureStatus === "processing" && <ProcessingOverlay />}
-        </div>
+        <div style={{ width: "100%", maxWidth: 384 }}>{cameraArea}</div>
 
         {/* Strip */}
         <div style={{ width: "100%", maxWidth: 384 }}>
@@ -176,25 +199,17 @@ export default function BoothPage() {
         </div>
 
         {/* CTA */}
-        <CaptureButton
-          onClick={handleStartCapture}
-          disabled={!isCameraReady || isCapturing}
-          isCapturing={isCapturing}
-          photoCount={photoCount}
-          style={{ width: "100%", maxWidth: 384 }}
-        />
+        <div style={{ width: "100%", maxWidth: 384 }}>{captureBtn}</div>
       </div>
 
-      {/* ============================================
-          LANDSCAPE layout
-      ============================================ */}
+      {/* == LANDSCAPE == */}
       <div
-        className="landscape-layout"
+        className="booth-landscape"
         style={{
-          flex: 1,
           display: "none",
           padding: "12px 20px",
           gap: 20,
+          minHeight: "100dvh",
           alignItems: "stretch",
         }}>
         {/* Kiri — kamera */}
@@ -203,31 +218,8 @@ export default function BoothPage() {
             flex: "0 0 55%",
             display: "flex",
             flexDirection: "column",
-            gap: 12,
-            position: "relative",
           }}>
-          <Camera
-            videoRef={videoRef}
-            streamRef={streamRef}
-            onReady={() => setIsCameraReady(true)}
-          />
-          <CountdownDisplay
-            count={useBoothStore((s) => s.countdown)}
-            isActive={captureStatus === "countdown"}
-          />
-          {isFlashing && (
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                background: "#fff",
-                borderRadius: 16,
-                zIndex: 20,
-                pointerEvents: "none",
-              }}
-            />
-          )}
-          {captureStatus === "processing" && <ProcessingOverlay />}
+          {cameraArea}
         </div>
 
         {/* Kanan — kontrol */}
@@ -246,24 +238,11 @@ export default function BoothPage() {
               alignItems: "center",
               justifyContent: "space-between",
             }}>
-            <Link
-              href="/"
-              style={{ fontSize: 13, color: "#888", textDecoration: "none" }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "#1a1a1a")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "#888")}>
-              ← back
-            </Link>
-            <span
-              style={{
-                fontSize: 12,
-                color: "#888",
-                fontFamily: "var(--font-dm-mono)",
-              }}>
-              {photoCount}/4
-            </span>
+            {backLink}
+            {counter}
           </div>
 
-          {/* Progress dots */}
+          {/* Dots */}
           <div style={{ display: "flex", gap: 6 }}>
             {[0, 1, 2, 3].map((i) => (
               <div
@@ -279,31 +258,24 @@ export default function BoothPage() {
             ))}
           </div>
 
-          {/* Strip preview */}
+          {/* Strip */}
           <div style={{ flex: 1, overflow: "hidden" }}>
             <PhotoStrip photos={photos} />
           </div>
 
           {/* CTA */}
-          <CaptureButton
-            onClick={handleStartCapture}
-            disabled={!isCameraReady || isCapturing}
-            isCapturing={isCapturing}
-            photoCount={photoCount}
-            style={{ width: "100%" }}
-          />
+          {captureBtn}
         </div>
       </div>
 
-      {/* CSS media query untuk switch layout */}
       <style>{`
         @media (orientation: landscape) and (max-height: 500px) {
-          .portrait-layout { display: none !important; }
-          .landscape-layout { display: flex !important; }
+          .booth-portrait  { display: none !important; }
+          .booth-landscape { display: flex !important; }
         }
         @media (orientation: portrait) {
-          .portrait-layout { display: flex !important; }
-          .landscape-layout { display: none !important; }
+          .booth-portrait  { display: flex !important; }
+          .booth-landscape { display: none !important; }
         }
       `}</style>
     </main>
@@ -357,19 +329,18 @@ function CaptureButton({
   disabled,
   isCapturing,
   photoCount,
-  style,
 }: {
   onClick: () => void;
   disabled: boolean;
   isCapturing: boolean;
   photoCount: number;
-  style?: React.CSSProperties;
 }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
       style={{
+        width: "100%",
         padding: "15px",
         background: disabled ? "#1a1a1a44" : "#1a1a1a",
         color: "#f5f2ee",
@@ -380,8 +351,6 @@ function CaptureButton({
         cursor: disabled ? "not-allowed" : "pointer",
         fontFamily: "var(--font-dm-sans)",
         transition: "all 0.15s",
-        letterSpacing: "0.2px",
-        ...style,
       }}
       onMouseEnter={(e) => {
         if (!disabled) e.currentTarget.style.transform = "scale(1.01)";
